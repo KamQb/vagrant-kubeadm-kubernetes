@@ -5,10 +5,10 @@ IP_START=10
 Vagrant.configure("2") do |config|
   config.vm.provision "shell", env: {"IP_NW" => IP_NW, "IP_START" => IP_START, "NUM_WORKER_NODES" => NUM_WORKER_NODES}, inline: <<-SHELL
       apt-get update -y
-      for i in {1..$((NUM_WORKER_NODES))}
+      echo "$IP_NW$((IP_START)) c1-cp1" >> /etc/hosts
+      for (( i=1; i<=$NUM_WORKER_NODES; i++ ))
       do
-        echo "$IP_NW$((IP_START)) c1-cp1" >> /etc/hosts
-        echo "$IP_NW$((IP_START+$i)) c1-node$i" >> /etc/hosts
+        echo "$IP_NW$((IP_START+i)) c1-node$1" >> /etc/hosts
       done
   SHELL
 
