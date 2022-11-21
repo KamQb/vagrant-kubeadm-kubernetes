@@ -1,20 +1,22 @@
 
 # Vagrantfile and Scripts to Automate Kubernetes Setup using Kubeadm [Practice Environment for CKA/CKAD and CKS Exams]
 
+## Fork info
+
+This is based both on [Devopscube cluster vagrant](https://devopscube.com/kubernetes-cluster-vagrant/) 
+and 
+[Pluralsight - Anthony Nocentino - Kubernetes Installation and Configuration Fundamentals ](https://www.pluralsight.com/courses/kubernetes-installation-configuration-fundamentals)
+
+Kubernetes installed using kubeadm, with Containerd runtime. Ubuntu images updated to 22.04. Kubernetes version 1.25.4
+
 ## Documentation
 
-Current k8s version for CKA, CKAD and CKS exam: 1.24
-
-Refer this link for documentation: https://devopscube.com/kubernetes-cluster-vagrant/
-
-## 🚀 CKA, CKAD, CKS or KCNA Coupon Codes
-
-If you are preparing for CKA, CKAD, CKS, or KCNA exam, get $60 discount today using code **SCOFFER15** at https://kube.promo/latest. It is a limited-time offer. Or Check out [Linux Foundation coupon](https://scriptcrunch.com/linux-foundation-coupon/) page for the latest voucher codes.
+Current k8s version for CKA, CKAD and CKS exam: 1.25
 
 ## Prerequisites
 
 1. Working Vagrant setup
-2. 8 Gig + RAM workstation as the Vms use 3 vCPUS and 4+ GB RAM
+2. VMs are using 18GB of Ram and 10 vCPUs
 
 ## For MAC/Linux Users
 
