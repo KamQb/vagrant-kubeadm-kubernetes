@@ -11,6 +11,8 @@ OS_VERSION_NAME="jammy"
 
 #### Prereqs
 
+echo "Disabling swap"
+
 # disable swap
 sudo swapoff -a
 
@@ -19,6 +21,8 @@ sudo swapoff -a
 
 
 #### Containerd
+
+echo "Installing Containerd"
 
 sudo apt-get update -y
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
@@ -53,7 +57,11 @@ sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = tru
 #Restart containerd with the new configuration
 sudo systemctl restart containerd
 
+echo "Finished installing Containerd"
+
 #### Kubernetes packages
+
+echo "Installing Kubernetes packages"
 
 #Add Google's apt repository gpg key
 sudo apt-get install -y apt-transport-https ca-certificates curl
@@ -74,6 +82,8 @@ sudo apt-mark hold kubelet kubeadm kubectl containerd
 # Run at startup
 sudo systemctl enable kubelet.service
 sudo systemctl enable containerd.service
+
+echo "Finished installing Kubernetes packages"
 
 #### Others
 
