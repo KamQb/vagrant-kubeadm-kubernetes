@@ -1,21 +1,22 @@
-NUM_WORKER_NODES=2
-IP_NW="10.0.0."
+NUM_WORKER_NODES=3
+IP_NW="172.16.94."
 IP_START=10
 
 Vagrant.configure("2") do |config|
-  config.vm.provision "shell", env: {"IP_NW" => IP_NW, "IP_START" => IP_START}, inline: <<-SHELL
+  config.vm.provision "shell", env: {"IP_NW" => IP_NW, "IP_START" => IP_START, "NUM_WORKER_NODES" => NUM_WORKER_NODES}, inline: <<-SHELL
       apt-get update -y
-      echo "$IP_NW$((IP_START)) master-node" >> /etc/hosts
-      echo "$IP_NW$((IP_START+1)) worker-node01" >> /etc/hosts
-      echo "$IP_NW$((IP_START+2)) worker-node02" >> /etc/hosts
+      for i in {1..$((NUM_WORKER_NODES))}
+      do
+        echo "$IP_NW$((IP_START)) c1-cp1" >> /etc/hosts
+        echo "$IP_NW$((IP_START+$i)) c1-node$i" >> /etc/hosts
+      done
   SHELL
 
-  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.box = "ubuntu/jammy64"
   config.vm.box_check_update = true
 
   config.vm.define "master" do |master|
-    # master.vm.box = "bento/ubuntu-18.04"
-    master.vm.hostname = "master-node"
+    master.vm.hostname = "cp-cp1"
     master.vm.network "private_network", ip: IP_NW + "#{IP_START}"
     master.vm.provider "virtualbox" do |vb|
         vb.memory = 4048
@@ -28,7 +29,7 @@ Vagrant.configure("2") do |config|
   (1..NUM_WORKER_NODES).each do |i|
 
   config.vm.define "node0#{i}" do |node|
-    node.vm.hostname = "worker-node0#{i}"
+    node.vm.hostname = "cp1-node#{i}"
     node.vm.network "private_network", ip: IP_NW + "#{IP_START + i}"
     node.vm.provider "virtualbox" do |vb|
         vb.memory = 2048
