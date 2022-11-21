@@ -4,24 +4,24 @@
 
 set -euxo pipefail
 
-# Variable Declaration
+#### Variables Declaration
 
-KUBERNETES_VERSION="1.23.6-00"
+KUBERNETES_VERSION="1.25*"
+OS_VERSION_NAME="jammy"
+
+#### Prereqs
 
 # disable swap
 sudo swapoff -a
 
 # keeps the swaf off during reboot
 (crontab -l 2>/dev/null; echo "@reboot /sbin/swapoff -a") | crontab - || true
+
+
+#### Containerd
+
 sudo apt-get update -y
-# Install CRI-O Runtime
-
-OS="xUbuntu_20.04"
-
-VERSION="1.23"
-
-# Create the .conf file to load the modules at bootup
-cat <<EOF | sudo tee /etc/modules-load.d/crio.conf
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
 EOF
@@ -29,44 +29,57 @@ EOF
 sudo modprobe overlay
 sudo modprobe br_netfilter
 
-# Set up required sysctl params, these persist across reboots.
-cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+# sysctl params required by setup, params persist across reboots
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables  = 1
-net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
 EOF
 
+# Apply sysctl params without reboot
 sudo sysctl --system
 
-cat <<EOF | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /
-EOF
-cat <<EOF | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
-deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /
-EOF
+# Finally install containerd
+sudo apt-get update 
+sudo apt-get install -y containerd
 
-curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:$VERSION/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
-curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
+#Create a containerd configuration file
+sudo mkdir -p /etc/containerd
+sudo containerd config default | sudo tee /etc/containerd/config.toml
 
-sudo apt-get update
-sudo apt-get install cri-o cri-o-runc -y
+#Set the cgroup driver for containerd to systemd which is required for the kubelet.
+sudo sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
 
-sudo systemctl daemon-reload
-sudo systemctl enable crio --now
+#Restart containerd with the new configuration
+sudo systemctl restart containerd
 
-echo "CRI runtime installed susccessfully"
+#### Kubernetes packages
 
-sudo apt-get update
+#Add Google's apt repository gpg key
 sudo apt-get install -y apt-transport-https ca-certificates curl
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 
+# Kube apt packages
 echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+# Note: https://apt.kubernetes.io/ doesn't have definitions for newer releases
+
+# Finally isntall kube components
 sudo apt-get update -y
 sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSION" kubeadm="$KUBERNETES_VERSION"
 sudo apt-get update -y
+
+# Dont update kube with normal apt updates
+sudo apt-mark hold kubelet kubeadm kubectl containerd
+
+#### Others
+
+# Usefull for working with json
 sudo apt-get install -y jq
 
-local_ip="$(ip --json a s | jq -r '.[] | if .ifname == "eth1" then .addr_info[] | if .family == "inet" then .local else empty end else empty end')"
-cat > /etc/default/kubelet << EOF
-KUBELET_EXTRA_ARGS=--node-ip=$local_ip
-EOF
+# # Set kube local IP to proper interface
+# local_ip="$(ip --json a s | jq -r '.[] | if .ifname == "eth1" then .addr_info[] | if .family == "inet" then .local else empty end else empty end')"
+# sudo cat > /etc/default/kubelet << EOF
+# KUBELET_EXTRA_ARGS=--node-ip=$local_ip
+# EOF
+
+
