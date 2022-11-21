@@ -71,6 +71,10 @@ sudo apt-get update -y
 # Dont update kube with normal apt updates
 sudo apt-mark hold kubelet kubeadm kubectl containerd
 
+# Run at startup
+sudo systemctl enable kubelet.service
+sudo systemctl enable containerd.service
+
 #### Others
 
 # Usefull for working with json
