@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
         vb.cpus = 2
     end
     master.vm.provision "shell", path: "scripts/common.sh"
-    master.vm.provision "shell", path: "scripts/master.sh"
+    master.vm.provision "shell", env: {"MASTER_IP" => IP_NW + "#{IP_START}"},  path: "scripts/master.sh"
   end
 
   (1..NUM_WORKER_NODES).each do |i|
