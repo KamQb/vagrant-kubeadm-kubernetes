@@ -36,7 +36,7 @@ Vagrant.configure("2") do |config|
         vb.cpus = 2
     end
     node.vm.provision "shell", path: "scripts/common.sh"
-    node.vm.provision "shell", path: "scripts/node.sh"
+    node.vm.provision "shell", env: {"NODE_IP" => IP_NW + "#{IP_START + i}"}, path: "scripts/node.sh"
   end
 
   end
